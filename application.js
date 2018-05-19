@@ -1,21 +1,30 @@
 (function() {
-    var db;
+
+  // 'global' variable to store reference to the database
+  var db;
+
+  databaseOpen()
+    .then(function() {
+      alert("The database has been opened");
+    });
+
+  function databaseOpen() {
+    return new Promise(function(resolve, reject) {
+      var version = 2;
+      var request = indexedDB.open('todos', version);
+
+      // Run migrations if necessary
+      request.onupgradeneeded = function(e) {
+        db = e.target.result;
+        e.target.transaction.onerror = reject;
+        db.createObjectStore('todo', { keyPath: '_id' });
+      };
   
-    databaseOpen()
-      .then(function() {
-        alert("The database has been opened");
-      });
-  
-    function databaseOpen() {
-      return new Promise(function(resolve, reject) {
-        var version = 1;
-        var request = indexedDB.open('todos', version);
-        request.onsuccess = function(e) {
-          db = e.target.result;
-          resolve();
-        };
-        request.onerror = reject;
-      });
-    }
-  
-  }());
+      request.onsuccess = function(e) {
+        db = e.target.result;
+        resolve();
+      };
+      request.onerror = reject;
+    });
+  }
+}());
