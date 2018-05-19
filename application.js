@@ -1,18 +1,16 @@
 (function () {
 
   // 'global' variable to store reference to the database
-  var db, input;
+  var db, input, ul;
 
   databaseOpen()
     .then(function () {
       console.log("The database has been opened");
       input = document.querySelector('input');
+      ul = document.querySelector('ul');
       document.body.addEventListener('submit', onSubmit);
     })
-    .then(databaseTotosGet)
-    .then(function(todos){
-      console.log(todos);
-    })
+    .then(refreshView)
     ;
 
   function onSubmit(e) {
@@ -22,6 +20,7 @@
       .then(function () {
         input.value = '';
       })
+      .then(refreshView);
   }
 
   function databaseOpen() {
@@ -55,7 +54,8 @@
     });
   }
 
-  function databaseTotosGet() {
+  // retrieve all todo items
+  function databaseTodosGet() {
     return new Promise(function (resolve, reject){
       var transaction = db.transaction(['todo'], 'readonly');
       var store = transaction.objectStore('todo');
@@ -80,4 +80,21 @@
       cursorRequest.onerror = reject;
     });
   }
+
+  function refreshView() {
+    return databaseTodosGet().then(renderAllTodos);
+  }
+
+  function renderAllTodos(todos) {
+    var html = '';
+    todos.forEach(function(todo) {
+      html += todoToHtml(todo);
+    });
+    ul.innerHTML = html;
+  }
+
+  function todoToHtml(todo) {
+    return '<li>'+todo.text+'</li>';
+  }
+
 }());
