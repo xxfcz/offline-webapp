@@ -9,6 +9,7 @@
       input = document.querySelector('input');
       ul = document.querySelector('ul');
       document.body.addEventListener('submit', onSubmit);
+      document.body.addEventListener('click', onDelete);
     })
     .then(refreshView)
     ;
@@ -21,6 +22,19 @@
         input.value = '';
       })
       .then(refreshView);
+  }
+
+  function onDelete(e) {
+    // We'll assume that any element with an ID
+    // attribute is a to-do item. Don't try this at home!
+    e.preventDefault();
+    if (e.target.hasAttribute('id')) {
+      databaseTodosGetById(e.target.getAttribute('id'))
+        .then(function(todo) {
+          return databaseTodosDelete(todo);
+        })
+        .then(refreshView);
+    }
   }
 
   function databaseOpen() {
@@ -81,6 +95,29 @@
     });
   }
 
+  function databaseTodosGetById(id) {
+    return new Promise(function(resolve, reject) {
+      var transaction = db.transaction(['todo'], 'readwrite');
+      var store = transaction.objectStore('todo');
+      var request = store.get(id);
+      request.onsuccess = function(e) {
+        var result = e.target.result;
+        resolve(result);
+      };
+      request.onerror = reject;
+    });
+  }
+
+  function databaseTodosDelete(todo) {
+    return new Promise(function(resolve, reject) {
+      var transaction = db.transaction(['todo'], 'readwrite');
+      var store = transaction.objectStore('todo');
+      var request = store.delete(todo._id);
+      transaction.oncomplete = resolve;
+      request.onerror = reject;
+    });
+  }
+
   function refreshView() {
     return databaseTodosGet().then(renderAllTodos);
   }
@@ -94,7 +131,7 @@
   }
 
   function todoToHtml(todo) {
-    return '<li>'+todo.text+'</li>';
+    return '<li><button id="'+todo._id+'">delete</button>'+todo.text+'</li>';
   }
 
 }());
